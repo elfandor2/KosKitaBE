@@ -49,5 +49,14 @@ func (service *orderService) CancelOrder(userId int, orderId string, orderCore o
 
 // WebhoocksService implements order.OrderServiceInterface.
 func (service *orderService) WebhoocksService(webhoocksReq order.OrderCore) error {
-	panic("unimplemented")
+	if webhoocksReq.ID == "" {
+		return errors.New("invalid order id")
+	}
+
+	err := service.orderData.WebhoocksData(webhoocksReq)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

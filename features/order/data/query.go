@@ -110,5 +110,14 @@ func (repo *orderQuery) GetOrder(userId uint) (*order.OrderCore, error) {
 
 // WebhoocksData implements order.OrderDataInterface.
 func (repo *orderQuery) WebhoocksData(webhoocksReq order.OrderCore) error {
-	panic("unimplemented")
+	dataGorm := WebhoocksCoreToModel(webhoocksReq)
+	tx := repo.db.Model(&Order{}).Where("id = ?", webhoocksReq.ID).Updates(dataGorm)
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	if tx.RowsAffected == 0 {
+		return errors.New("error record not found ")
+	}
+	return nil
 }

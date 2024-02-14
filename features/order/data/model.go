@@ -86,3 +86,9 @@ func ModelToCore(o Order) order.OrderCore {
 		},
 	}
 }
+
+func WebhoocksCoreToModel(reqNotif order.OrderCore) Order {
+	return Order{
+		Status: reqNotif.Status,
+	}
+}
