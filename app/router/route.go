@@ -12,6 +12,9 @@ import (
 	kd "KosKita/features/kos/data"
 	kh "KosKita/features/kos/handler"
 	ks "KosKita/features/kos/service"
+	od "KosKita/features/order/data"
+	oh "KosKita/features/order/handler"
+	os "KosKita/features/order/service"
 	ud "KosKita/features/user/data"
 	uh "KosKita/features/user/handler"
 	us "KosKita/features/user/service"
@@ -48,6 +51,10 @@ func InitRouter(db *gorm.DB, e *echo.Echo) {
 	bookService := bs.New(bookData, userService)
 	bookHandlerAPI := bh.New(bookService)
 
+	orderData := od.NewOrder(db, midtrans)
+	orderService := os.NewOrder(orderData)
+	orderHandlerAPI := oh.NewOrder(orderService)
+
 	adminService := as.New(userData, kosData, bookData, userService)
 	adminHandlerAPI := ah.New(adminService)
 
@@ -83,8 +90,15 @@ func InitRouter(db *gorm.DB, e *echo.Echo) {
 	e.GET("/kos/search", kosHandlerAPI.SearchKos)
 
 	// define routes/ endpoint BOOKING
-	e.POST("/booking", bookHandlerAPI.CreateBook, middlewares.JWTMiddleware())
-	e.PUT("/booking/:id", bookHandlerAPI.CancelBooking, middlewares.JWTMiddleware())
-	e.POST("/payment/notification", bookHandlerAPI.WebhoocksNotification)
+	// e.POST("/booking", bookHandlerAPI.CreateBook, middlewares.JWTMiddleware())
+	// e.PUT("/booking/:id", bookHandlerAPI.CancelBooking, middlewares.JWTMiddleware())
+	// e.POST("/payment/notification", bookHandlerAPI.WebhoocksNotification)
 	e.GET("/booking", bookHandlerAPI.GetBooking, middlewares.JWTMiddleware())
+
+	// define routes/ endpoint Order
+	e.POST("/order", orderHandlerAPI.CreateOrder, middlewares.JWTMiddleware())
+	e.GET("/order", orderHandlerAPI.GetOrders, middlewares.JWTMiddleware())
+	e.PUT("/order/:order_id", orderHandlerAPI.CancelOrderById, middlewares.JWTMiddleware())
+	// e.POST("/payment/notification", bookHandlerAPI.WebhoocksNotification)
+	// e.GET("/booking", bookHandlerAPI.GetBooking, middlewares.JWTMiddleware())
 }
