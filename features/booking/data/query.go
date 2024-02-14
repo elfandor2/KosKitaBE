@@ -7,6 +7,8 @@ import (
 	kd "KosKita/features/kos/data"
 	"KosKita/utils/externalapi"
 	"errors"
+	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -35,60 +37,48 @@ func (repo *bookQuery) Insert(userIdLogin int, input booking.BookingCore) (*book
 	bookModel := CoreToModelBook(input)
 	bookModel.UserId = uint(userIdLogin)
 	bookModel.Total = input.Total
-	bookModel.Payment.ExpiredAt = nil
-	bookModel.Payment.PaidAt = nil
-
-	if err := bookModel.GenerateCode(); err != nil {
-		return nil, err
-	}
+	// bookModel.ExpiredAt = time.Time.Local()
+	// bookModel.PaidAt = &input.PaidAt
+	fmt.Println("book expired at", bookModel.ExpiredAt)
 
 	if err := repo.db.Create(&bookModel).Error; err != nil {
 		return nil, err
 	}
-	tx := repo.db.Preload("User").Where("user_id = ?", userIdLogin).First(&bookModel)
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
+
 	input.Code = bookModel.Code
 
+	log.Println("input book", input)
 	payment, errPay := repo.paymentMidtrans.NewOrderPayment(input)
 
+	log.Println("input payment", payment)
 	if errPay != nil {
 		return nil, errPay
 	}
 
-	bookModel.Payment.Method = payment.Method
-	bookModel.Payment.Bank = payment.Bank
-	bookModel.Payment.VirtualNumber = payment.VirtualNumber
-	bookModel.Payment.BillKey = payment.BillKey
-	bookModel.Payment.BillCode = payment.BillCode
-	bookModel.Payment.Status = payment.Status
-	bookModel.Payment.ExpiredAt = &payment.ExpiredAt
-	// bookModel.Payment.PaidAt = &payment.PaidAt
-	bookModel.Payment.PaidAt = nil
+	bookModel.Method = payment.Method
+	bookModel.Bank = payment.Bank
+	bookModel.VirtualNumber = payment.VirtualNumber
+	bookModel.Status = payment.Status
+	bookModel.ExpiredAt = payment.ExpiredAt
+	bookModel.PaidAt = payment.PaidAt
 
-	if err := repo.db.Save(&bookModel).Error; err != nil {
+	log.Println("input bookmodel", bookModel)
+
+	if err := repo.db.Updates(&bookModel).Error; err != nil {
 		return nil, err
 	}
 
-	if payment.Status == "settlement" {
-		boardingHouse.Rooms -= 1
-		if err := repo.db.Save(&boardingHouse).Error; err != nil {
-			return nil, err
-		}
-	}
-
 	bookCore := ModelToCoreBook(bookModel)
-	if payment != nil {
-		bookCore.Payment = *payment
-	}
+	// if payment != nil {
+	// 	bookCore = *payment
+	// }
 
 	return &bookCore, nil
 }
 
 // CancelBooking implements booking.BookDataInterface.
 func (repo *bookQuery) CancelBooking(userIdLogin int, bookingId string, bookingCore booking.BookingCore) error {
-	if bookingCore.Payment.Status == "cancelled" {
+	if bookingCore.Status == "cancelled" {
 		repo.paymentMidtrans.CancelOrderPayment(bookingId)
 	}
 
@@ -133,7 +123,8 @@ func (repo *bookQuery) GetBooking(userId uint) ([]booking.BookingCore, error) {
 // WebhoocksData implements booking.BookDataInterface.
 func (repo *bookQuery) WebhoocksData(webhoocksReq booking.BookingCore) error {
 	bookingGorm := WebhoocksCoreToModel(webhoocksReq)
-	tx := repo.db.Model(&Booking{}).Where("code = ?", webhoocksReq.Code).Updates(bookingGorm)
+
+	tx := repo.db.Model(&Booking{}).Where("code = ?", bookingGorm.Code).Updates(bookingGorm)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -141,6 +132,7 @@ func (repo *bookQuery) WebhoocksData(webhoocksReq booking.BookingCore) error {
 	if tx.RowsAffected == 0 {
 		return errors.New("error record not found ")
 	}
+
 	return nil
 }
 
@@ -157,9 +149,29 @@ func (repo *bookQuery) GetRatingAndFacility(userId uint) ([]kos.Core, error) {
 	for _, k := range kosData {
 		result = append(result, k.ModelToCoreKos())
 	}
-	// for _, v := range kosData {
-	// 	fmt.Println(v.Ratings)
-
-	// }
 	return result, nil
+}
+
+func (repo *bookQuery) GetTotalBooking() (int, error) {
+	var count int64
+	tx := repo.db.Model(&Booking{}).Count(&count)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return int(count), nil
+}
+
+func (repo *bookQuery) GetTotalBookingPerYear(year int) ([]int, error) {
+	var counts []int
+	rows, err := repo.db.Raw("SELECT COUNT(*) as count FROM bookings WHERE YEAR(created_at) = ? GROUP BY MONTH(created_at) ORDER BY MONTH(created_at)", year).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var count int
+		rows.Scan(&count)
+		counts = append(counts, count)
+	}
+	return counts, nil
 }

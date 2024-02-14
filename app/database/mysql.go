@@ -4,9 +4,10 @@ import (
 	"KosKita/app/config"
 	"fmt"
 
-	ud "KosKita/features/user/data"
-	kd "KosKita/features/kos/data"
 	bd "KosKita/features/booking/data"
+	kd "KosKita/features/kos/data"
+	md "KosKita/features/chat/data"
+	ud "KosKita/features/user/data"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -22,7 +23,7 @@ func InitDBMysql(cfg *config.AppConfig) *gorm.DB {
 		panic(err)
 	}
 
-	DB.AutoMigrate(&ud.User{}, &kd.BoardingHouse{}, &kd.Rating{}, &bd.Booking{}, &kd.KosFacility{}, &kd.KosRule{})
+	DB.AutoMigrate(&ud.User{}, &kd.BoardingHouse{}, &kd.Rating{}, &bd.Booking{}, &kd.KosFacility{}, &kd.KosRule{}, &md.Chat{})
 
 	return DB
 }

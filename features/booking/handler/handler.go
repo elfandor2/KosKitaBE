@@ -5,7 +5,6 @@ import (
 	"KosKita/utils/middlewares"
 	"KosKita/utils/responses"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -39,7 +38,11 @@ func (handler *BookHandler) CreateBook(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, responses.WebResponse(errInsert.Error(), nil))
 	}
 
-	result := CoreToResponseBook(payment)
+	// result := CoreToResponseBook(payment)
+	result := BookingResponse{}
+	if payment != nil {
+		result = CoreToResponseBook(payment)
+	}
 
 	return c.JSON(http.StatusOK, responses.WebResponse("success booking kos", result))
 }
@@ -86,7 +89,6 @@ func (handler *BookHandler) GetBooking(c echo.Context) error {
 }
 
 func (handler *BookHandler) WebhoocksNotification(c echo.Context) error {
-
 	var webhoocksReq = WebhoocksRequest{}
 	errBind := c.Bind(&webhoocksReq)
 	if errBind != nil {
@@ -96,9 +98,8 @@ func (handler *BookHandler) WebhoocksNotification(c echo.Context) error {
 	bookingCore := WebhoocksRequestToCore(webhoocksReq)
 	err := handler.bookService.WebhoocksData(bookingCore)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, responses.WebResponse("error Notif "+err.Error(), nil))
+		return c.JSON(http.StatusInternalServerError, responses.WebResponse(err.Error(), nil))
 	}
 
-	log.Println("transaction success")
-	return c.JSON(http.StatusOK, responses.WebResponse("transaction success", nil))
+	return c.JSON(http.StatusOK, responses.WebResponse("success update status booking", nil))
 }

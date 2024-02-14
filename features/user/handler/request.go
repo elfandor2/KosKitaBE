@@ -43,3 +43,12 @@ func UpdateRequestToCore(input UserRequest, imageURL string) user.Core {
 		PhotoProfile: imageURL,
 	}
 }
+
+func UpdateRequestToCoreUpdate(input UserRequest, imageURL string) user.CoreUpdate {
+	return user.CoreUpdate{
+		Name:         input.Name,
+		UserName:     input.UserName,
+		Email:        input.Email,
+		PhotoProfile: imageURL,
+	}
+}

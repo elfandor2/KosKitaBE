@@ -50,7 +50,7 @@ type KosResponseDetail struct {
 	ID            uint                          `json:"id"`
 	Name          string                         `json:"kos_name"`
 	Description   string                        `json:"description"`
-	Rooms         int                           `json:"stock"`
+	Rooms         int                           `json:"rooms"`
 	Rating        float64                       `json:"rating"`
 	Category      string                        `json:"category"`
 	Price         int                           `json:"price"`

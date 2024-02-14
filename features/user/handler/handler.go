@@ -32,10 +32,10 @@ func (handler *UserHandler) RegisterUser(c echo.Context) error {
 	userCore := RequestToCore(newUser)
 	errInsert := handler.userService.Create(userCore)
 	if errInsert != nil {
-		return c.JSON(http.StatusInternalServerError, responses.WebResponse("error insert data. "+errInsert.Error(), nil))
+		return c.JSON(http.StatusBadRequest, responses.WebResponse("error insert data. "+errInsert.Error(), nil))
 	}
 
-	return c.JSON(http.StatusOK, responses.WebResponse("Successful Operation", nil))
+	return c.JSON(http.StatusOK, responses.WebResponse("success insert user", nil))
 }
 
 func (handler *UserHandler) Login(c echo.Context) error {
@@ -46,7 +46,7 @@ func (handler *UserHandler) Login(c echo.Context) error {
 	}
 	result, token, err := handler.userService.Login(reqData.Email, reqData.Password)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, responses.WebResponse("error login. "+err.Error(), nil))
+		return c.JSON(http.StatusBadRequest, responses.WebResponse("error login. "+err.Error(), nil))
 	}
 	responseData := map[string]any{
 		"token": token,
@@ -90,10 +90,10 @@ func (handler *UserHandler) UpdateUser(c echo.Context) error {
 		}
 	}
 
-	userCore := UpdateRequestToCore(userData, imageURL)
+	userCore := UpdateRequestToCoreUpdate(userData, imageURL)
 	errUpdate := handler.userService.Update(userIdLogin, userCore)
 	if errUpdate != nil {
-		return c.JSON(http.StatusInternalServerError, responses.WebResponse("error update data. "+errUpdate.Error(), nil))
+		return c.JSON(http.StatusBadRequest, responses.WebResponse("error update data. "+errUpdate.Error(), nil))
 	}
 
 	return c.JSON(http.StatusOK, responses.WebResponse("success update data", nil))
@@ -121,8 +121,8 @@ func (handler *UserHandler) ChangePassword(c echo.Context) error {
 
 	errChange := handler.userService.ChangePassword(userIdLogin, passwords.OldPassword, passwords.NewPassword)
 	if errChange != nil {
-		return c.JSON(http.StatusInternalServerError, responses.WebResponse("error update data. "+errChange.Error(), nil))
+		return c.JSON(http.StatusBadRequest, responses.WebResponse("error change password. "+errChange.Error(), nil))
 	}
 
-	return c.JSON(http.StatusOK, responses.WebResponse("success update data", nil))
+	return c.JSON(http.StatusOK, responses.WebResponse("success change password", nil))
 }

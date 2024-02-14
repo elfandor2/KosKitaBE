@@ -74,32 +74,31 @@ func RequestToCoreFoto(imageURLs []string, userIdLogin uint) kos.CoreFoto {
 }
 
 func RequestToCoreFotoPut(imageURLs []string, userIdLogin uint) kos.CoreFoto {
-    coreFoto := kos.CoreFoto{
-        UserID: userIdLogin,
-    }
+	coreFoto := kos.CoreFoto{
+		UserID: userIdLogin,
+	}
 
-    numImages := len(imageURLs)
-    if numImages > 0 {
-        coreFoto.PhotoMain = imageURLs[0]
-    }
-    if numImages > 1 {
-        coreFoto.PhotoFront = imageURLs[1]
-    }
-    if numImages > 2 {
-        coreFoto.PhotoBack = imageURLs[2]
-    }
-    if numImages > 3 {
-        coreFoto.PhotoRoomFront = imageURLs[3]
-    }
-    if numImages > 4 {
-        coreFoto.PhotoRoomInside = imageURLs[4]
-    }
+	numImages := len(imageURLs)
+	if numImages > 0 {
+		coreFoto.PhotoMain = imageURLs[0]
+	}
+	if numImages > 1 {
+		coreFoto.PhotoFront = imageURLs[1]
+	}
+	if numImages > 2 {
+		coreFoto.PhotoBack = imageURLs[2]
+	}
+	if numImages > 3 {
+		coreFoto.PhotoRoomFront = imageURLs[3]
+	}
+	if numImages > 4 {
+		coreFoto.PhotoRoomInside = imageURLs[4]
+	}
 
-    return coreFoto
+	return coreFoto
 }
 
-
-func RequestToCorePut(input KosRequest, userIdLogin uint) kos.Core {
+func RequestToCorePut(input KosRequest, userIdLogin uint) kos.CoreInput {
 	var kosFacilities []kos.KosFacilityCore
 	for _, facility := range input.KosFacilities {
 		kosFacilities = append(kosFacilities, kos.KosFacilityCore{
@@ -114,16 +113,16 @@ func RequestToCorePut(input KosRequest, userIdLogin uint) kos.Core {
 		})
 	}
 
-	kos := kos.Core{
-		UserID:      userIdLogin,
-		Name:        input.Name,
-		Description: input.Description,
-		Category:    input.Category,
-		Price:       input.Price,
-		Rooms:       input.Rooms,
-		Address:     input.Address,
-		Longitude:   input.Longitude,
-		Latitude:    input.Latitude,
+	kos := kos.CoreInput{
+		UserID:        userIdLogin,
+		Name:          input.Name,
+		Description:   input.Description,
+		Category:      input.Category,
+		Price:         input.Price,
+		Rooms:         input.Rooms,
+		Address:       input.Address,
+		Longitude:     input.Longitude,
+		Latitude:      input.Latitude,
 		KosFacilities: kosFacilities,
 		KosRules:      kosRules,
 	}

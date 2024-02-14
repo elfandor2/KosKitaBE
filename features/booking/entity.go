@@ -18,28 +18,44 @@ type BookingCore struct {
 	User            ud.Core
 	BoardingHouseId uint
 	BoardingHouse   kd.Core
-	Payment         PaymentCore
+	Method          string
+	Bank            string
+	VirtualNumber   string
+	BookingCode     int
+	BookingTotal    float64
+	Status          string
+	CreatedAt       time.Time
+	ExpiredAt       time.Time
+	PaidAt          time.Time
+	// Payment         PaymentCore
 }
 
-type PaymentCore struct {
-	Method        string
-	Bank          string
-	VirtualNumber string
-	BillKey       string
-	BillCode      string
-	Status        string
-	BookingCode   int
-	BookingTotal  float64
-	CreatedAt     time.Time
-	ExpiredAt     time.Time
-	PaidAt        time.Time
+type MonthCount struct {
+	Month int
+	Count int
 }
+
+// type PaymentCore struct {
+// 	Method        string
+// 	Bank          string
+// 	VirtualNumber string
+// 	BillKey       string
+// 	BillCode      string
+// 	BookingCode   int
+// 	BookingTotal  float64
+// 	Status        string
+// 	CreatedAt     time.Time
+// 	ExpiredAt     time.Time
+// 	PaidAt        time.Time
+// }
 
 type BookDataInterface interface {
 	Insert(userIdLogin int, input BookingCore) (*BookingCore, error)
 	CancelBooking(userIdLogin int, bookingId string, bookingCore BookingCore) error
 	GetBooking(userId uint) ([]BookingCore, error)
 	WebhoocksData(webhoocksReq BookingCore) error
+	GetTotalBooking() (int, error)
+	GetTotalBookingPerYear(year int) ([]int, error)
 }
 
 // interface untuk Service Layer

@@ -50,17 +50,13 @@ func (service *userService) GetById(userId int) (*user.Core, error) {
 }
 
 // Update implements user.UserServiceInterface.
-func (service *userService) Update(userId int, input user.Core) error {
+func (service *userService) Update(userId int, input user.CoreUpdate) error {
+	errValidate := service.validate.Struct(input)
+	if errValidate != nil {
+		return errValidate
+	}
 	if userId <= 0 {
 		return errors.New("invalid id.")
-	}
-
-	if input.Password != "" {
-		hashedPass, errHash := service.hashService.HashPassword(input.Password)
-		if errHash != nil {
-			return errors.New("Error hash password.")
-		}
-		input.Password = hashedPass
 	}
 
 	err := service.userData.Update(userId, input)
@@ -122,6 +118,11 @@ func (service *userService) ChangePassword(userId int, oldPassword, newPassword 
 	checkPassword := service.hashService.CheckPasswordHash(user.Password, oldPassword)
 	if !checkPassword {
 		return errors.New("current password not match")
+	}
+
+	checkNewPassword := service.hashService.CheckPasswordHash(user.Password, newPassword)
+	if checkNewPassword {
+		return errors.New("password cannot be the same")
 	}
 
 	hashedNewPass, errHash := service.hashService.HashPassword(newPassword)

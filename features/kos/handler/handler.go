@@ -39,6 +39,9 @@ func (handler *KosHandler) CreateKos(c echo.Context) error {
 
 	kosId, errInsert := handler.kosService.Create(userIdLogin, kosCore)
 	if errInsert != nil {
+		if errInsert.Error() == "anda bukan owner" {
+			return c.JSON(http.StatusUnauthorized, responses.WebResponse(errInsert.Error(), nil))
+		}
 		return c.JSON(http.StatusInternalServerError, responses.WebResponse(errInsert.Error(), nil))
 	}
 
@@ -159,6 +162,10 @@ func (handler *KosHandler) UpdateKos(c echo.Context) error {
 
 	errUpdate := handler.kosService.Put(userIdLogin, kosCore)
 	if errUpdate != nil {
+		if errUpdate.Error() == "anda bukan owner" {
+			return c.JSON(http.StatusUnauthorized, responses.WebResponse(errUpdate.Error(), nil))
+		}
+
 		return c.JSON(http.StatusInternalServerError, responses.WebResponse(errUpdate.Error(), nil))
 	}
 
@@ -219,6 +226,14 @@ func (handler *KosHandler) DeleteKos(c echo.Context) error {
 
 	errDelete := handler.kosService.Delete(userIdLogin, kosId)
 	if errDelete != nil {
+		if errDelete.Error() == "kos id tidak ada" {
+			return c.JSON(http.StatusNotFound, responses.WebResponse(errDelete.Error(), nil))
+		}
+
+		if errDelete.Error() == "kos ini bukan milik Anda" {
+			return c.JSON(http.StatusUnauthorized, responses.WebResponse(errDelete.Error(), nil))
+		}
+
 		return c.JSON(http.StatusInternalServerError, responses.WebResponse(errDelete.Error(), nil))
 	}
 
@@ -226,9 +241,14 @@ func (handler *KosHandler) DeleteKos(c echo.Context) error {
 }
 
 func (handler *KosHandler) GetKosById(c echo.Context) error {
-	kosId, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
+	kosIdStr := c.Param("id")
+	if kosIdStr == "" {
 		return c.JSON(http.StatusBadRequest, responses.WebResponse("id kos kosong", nil))
+	}
+
+	kosId, err := strconv.Atoi(kosIdStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, responses.WebResponse("id kos salah", nil))
 	}
 
 	kos, err := handler.kosService.GetById(kosId)
@@ -260,6 +280,19 @@ func (handler *KosHandler) GetKosByUserId(c echo.Context) error {
 }
 
 func (handler *KosHandler) SearchKos(c echo.Context) error {
+	expectedParams := map[string]bool{
+		"address":  true,
+		"category": true,
+		"minPrice": true,
+		"maxPrice": true,
+	}
+
+	for param := range c.QueryParams() {
+		if _, ok := expectedParams[param]; !ok {
+			return c.JSON(http.StatusBadRequest, responses.WebResponse("invalid search param", nil))
+		}
+	}
+
 	query := c.QueryParam("address")
 	category := c.QueryParam("category")
 	minPrice, _ := strconv.Atoi(c.QueryParam("minPrice"))

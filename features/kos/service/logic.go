@@ -67,11 +67,21 @@ func (ks *kosService) Create(userIdLogin int, input kos.CoreInput) (uint, error)
 }
 
 // Put implements kos.KosServiceInterface.
-func (ks *kosService) Put(userIdLogin int, input kos.Core) error {
-	err := ks.kosData.Update(userIdLogin, input)
+func (ks *kosService) Put(userIdLogin int, input kos.CoreInput) error {
+	user, err := ks.userService.GetById(userIdLogin)
 	if err != nil {
 		return err
 	}
+
+	if user.Role != "owner" {
+		return errors.New("anda bukan owner")
+	}
+
+	err = ks.kosData.Update(userIdLogin, input)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -106,21 +116,15 @@ func (ks *kosService) GetByRating() ([]kos.Core, error) {
 
 // Delete implements kos.KosServiceInterface.
 func (ks *kosService) Delete(userIdLogin int, kosId int) error {
-	if userIdLogin <= 0 {
-		return errors.New("perlu login dulu")
-	}
-	if kosId <= 0 {
-		return errors.New("kos id tidak valid")
-	}
-
 	kos, err := ks.kosData.SelectById(kosId)
 	if err != nil {
 		if err.Error() == "record not found" {
 			return errors.New("kos id tidak ada")
 		}
+
 		return err
 	}
-
+	
 	if kos.User.ID != uint(userIdLogin) {
 		return errors.New("kos ini bukan milik Anda")
 	}

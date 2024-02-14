@@ -10,7 +10,8 @@ type BookingResponse struct {
 	Code                 string     `json:"booking_code,omitempty"`
 	Status               string     `json:"status,omitempty"`
 	Total                float64    `json:"total,omitempty"`
-	PaymentBank          string     `json:"payment_method,omitempty"`
+	PaymentMethod        string     `json:"payment_method,omitempty"`
+	PaymentBank          string     `json:"bank,omitempty"`
 	PaymentVirtualNumber string     `json:"virtual_number,omitempty"`
 	PaymentBillKey       string     `json:"key_bill,omitempty"`
 	PaymentBillCode      string     `json:"code_bill,omitempty"`
@@ -31,25 +32,23 @@ type BookingHistoryResponse struct {
 func CoreToResponseBook(core *booking.BookingCore) BookingResponse {
 	return BookingResponse{
 		Code:                 core.Code,
-		Status:               core.Payment.Status,
+		Status:               core.Status,
 		Total:                core.Total,
-		PaymentBank:          core.Payment.Bank,
-		PaymentVirtualNumber: core.Payment.VirtualNumber,
-		PaymentBillKey:       core.Payment.BillKey,
-		PaymentBillCode:      core.Payment.BillCode,
-		PaymentExpiredAt:     &core.Payment.ExpiredAt,
+		PaymentMethod:        core.Method,
+		PaymentBank:          core.Bank,
+		PaymentVirtualNumber: core.VirtualNumber,
+		PaymentExpiredAt:     &core.ExpiredAt,
 	}
 }
 
 func CoreToResponseBookHistory(core *booking.BookingCore) BookingHistoryResponse {
 	return BookingHistoryResponse{
-		KosId:   core.BoardingHouse.ID,
-		KosName: core.BoardingHouse.Name,
-		// KosFasilitas: KosFasilitasList(core.BoardingHouse.KosFacilities),
+		KosId:         core.BoardingHouse.ID,
+		KosName:       core.BoardingHouse.Name,
 		KosLokasi:     core.BoardingHouse.Address,
 		KosRating:     KosRatingResult(core.BoardingHouse.Ratings),
 		KosMainFoto:   core.BoardingHouse.PhotoMain,
-		PaymentStatus: core.Payment.Status,
+		PaymentStatus: core.Status,
 		TotalHarga:    core.Total,
 	}
 }
@@ -64,12 +63,10 @@ func KosFasilitasList(kf []kos.KosFacilityCore) []string {
 
 func KosRatingResult(numbers []kos.RatingCore) float64 {
 	var results float64
-	// menjumlahkan semua angka dalam slice
 	if len(numbers) > 0 {
 		for _, num := range numbers {
 			results += float64(num.Score)
 		}
-		// mengembalikan rata-rata
 		return float64(results) / float64(len(numbers))
 	}
 	return 0

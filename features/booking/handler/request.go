@@ -2,6 +2,8 @@ package handler
 
 import (
 	"KosKita/features/booking"
+
+	"github.com/google/uuid"
 )
 
 type BookRequest struct {
@@ -16,35 +18,32 @@ type CancelBookingRequest struct {
 
 func RequestToCoreBook(input BookRequest, userIdLogin uint) booking.BookingCore {
 	return booking.BookingCore{
+		Code:            uuid.New().String(),
 		UserId:          userIdLogin,
 		BoardingHouseId: input.BoardingHouseId,
-		Payment: booking.PaymentCore{
-			Method: input.Method,
-			Bank:   input.Bank,
-		},
+		Method:          input.Method,
+		Bank:            input.Bank,
+		// Payment: booking.PaymentCore{
+		// 	Method: input.Method,
+		// 	Bank:   input.Bank,
+		// },
 	}
 }
 
 func CancelRequestToCoreBooking(input CancelBookingRequest) booking.BookingCore {
 	return booking.BookingCore{
-		Payment: booking.PaymentCore{
-			Status: input.Status,
-		},
+		Status: input.Status,
 	}
 }
 
 type WebhoocksRequest struct {
-	OrderID           string `json:"order_id"`
-	TransactionStatus string `json:"transaction_status"`
-	SignatureKey      string `json:"signature_key"`
+	Code   string `json:"order_id"`
+	Status string `json:"transaction_status"`
 }
 
 func WebhoocksRequestToCore(input WebhoocksRequest) booking.BookingCore {
-	// orderId, _ := strconv.Atoi(input.OrderID)
 	return booking.BookingCore{
-		Code: input.OrderID,
-		Payment: booking.PaymentCore{
-			Status: input.TransactionStatus,
-		},
+		Code:   input.Code,
+		Status: input.Status,
 	}
 }

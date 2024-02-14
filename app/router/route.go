@@ -1,9 +1,14 @@
 package router
 
 import (
+	ah "KosKita/features/admin/handler"
+	as "KosKita/features/admin/service"
 	bd "KosKita/features/booking/data"
 	bh "KosKita/features/booking/handler"
 	bs "KosKita/features/booking/service"
+	cd "KosKita/features/chat/data"
+	ch "KosKita/features/chat/handler"
+	cs "KosKita/features/chat/service"
 	kd "KosKita/features/kos/data"
 	kh "KosKita/features/kos/handler"
 	ks "KosKita/features/kos/service"
@@ -21,6 +26,11 @@ import (
 )
 
 func InitRouter(db *gorm.DB, e *echo.Echo) {
+	chatData := cd.New(db)
+	chatService := cs.New(chatData)
+	hub := cs.NewHub()
+	wsHandler := ch.New(chatService, hub)
+	go hub.Run()
 
 	hash := encrypts.New()
 	cloudinaryUploader := cloudinary.New()
@@ -38,7 +48,17 @@ func InitRouter(db *gorm.DB, e *echo.Echo) {
 	bookService := bs.New(bookData, userService)
 	bookHandlerAPI := bh.New(bookService)
 
+	adminService := as.New(userData, kosData, bookData, userService)
+	adminHandlerAPI := ah.New(adminService)
+
 	// define routes/ endpoint MESSAGE
+	e.POST("/create-room", wsHandler.CreateRoom)
+	e.GET("/get-room", wsHandler.GetRooms)
+	e.GET("/join-room/:roomId", wsHandler.JoinRoom)
+	e.GET("/room/:roomId", wsHandler.GetMessages)
+
+	// define routes/ endpoint ADMIN
+	e.GET("/admin", adminHandlerAPI.GetAllData, middlewares.JWTMiddleware())
 
 	// define routes/ endpoint IMAGE
 	e.POST("/upload-image/:kosid", kosHandlerAPI.UploadImages, middlewares.JWTMiddleware())
@@ -65,6 +85,6 @@ func InitRouter(db *gorm.DB, e *echo.Echo) {
 	// define routes/ endpoint BOOKING
 	e.POST("/booking", bookHandlerAPI.CreateBook, middlewares.JWTMiddleware())
 	e.PUT("/booking/:id", bookHandlerAPI.CancelBooking, middlewares.JWTMiddleware())
-	e.POST("/notification", bookHandlerAPI.WebhoocksNotification)
+	e.POST("/payment/notification", bookHandlerAPI.WebhoocksNotification)
 	e.GET("/booking", bookHandlerAPI.GetBooking, middlewares.JWTMiddleware())
 }

@@ -70,7 +70,7 @@ func (repo *kosQuery) InsertImage(userIdLogin int, kosId int, input kos.CoreFoto
 }
 
 // Update implements kos.KosDataInterface.
-func (repo *kosQuery) Update(userIdLogin int, input kos.Core) error {
+func (repo *kosQuery) Update(userIdLogin int, input kos.CoreInput) error {
 	kos := BoardingHouse{}
 	tx := repo.db.Where("id = ? AND user_id = ?", input.ID, userIdLogin).First(&kos)
 	if tx.Error != nil {
@@ -78,10 +78,39 @@ func (repo *kosQuery) Update(userIdLogin int, input kos.Core) error {
 	}
 
 	kosInput := CoreToModelPut(input)
-
 	tx = repo.db.Model(&kos).Updates(&kosInput)
 	if tx.Error != nil {
 		return tx.Error
+	}
+
+	for _, facility := range input.KosFacilities {
+		facilityModel := KosFacility{
+			Facility:        facility.Facility,
+			BoardingHouseID: kosInput.ID,
+		}
+		if tx := repo.db.Where("facility = ? AND boarding_house_id = ?", facilityModel.Facility, facilityModel.BoardingHouseID).First(&KosFacility{}); tx.Error == gorm.ErrRecordNotFound {
+			tx = repo.db.Create(&facilityModel)
+		} else {
+			tx = repo.db.Updates(&facilityModel)
+		}
+		if tx.Error != nil {
+			return tx.Error
+		}
+	}
+
+	for _, rule := range input.KosRules {
+		ruleModel := KosRule{
+			Rule:            rule.Rule,
+			BoardingHouseID: kosInput.ID,
+		}
+		if tx := repo.db.Where("rule = ? AND boarding_house_id = ?", ruleModel.Rule, ruleModel.BoardingHouseID).First(&KosRule{}); tx.Error == gorm.ErrRecordNotFound {
+			tx = repo.db.Create(&ruleModel)
+		} else {
+			tx = repo.db.Updates(&ruleModel)
+		}
+		if tx.Error != nil {
+			return tx.Error
+		}
 	}
 
 	return nil
@@ -93,7 +122,7 @@ func (repo *kosQuery) CekRating(userId, kosId int) (*kos.RatingCore, error) {
 	tx := repo.db.Where("user_id = ? AND boarding_house_id = ?", userId, kosId).First(&ratingData)
 
 	if tx.Error != nil {
-		return nil, tx.Error
+		return nil, nil
 	}
 
 	ratingCore := ratingData.ModelToCoreRating()
@@ -203,4 +232,13 @@ func (repo *kosQuery) SearchKos(query, category string, minPrice, maxPrice int) 
 	}
 
 	return result, nil
+}
+
+func (repo *kosQuery) GetTotalKos() (int, error) {
+	var count int64
+	tx := repo.db.Model(&BoardingHouse{}).Count(&count)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+	return int(count), nil
 }

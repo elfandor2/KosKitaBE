@@ -39,8 +39,8 @@ func (bs *bookService) Create(userIdLogin int, input booking.BookingCore) (*book
 
 // CancelBooking implements booking.BookServiceInterface.
 func (bs *bookService) CancelBooking(userIdLogin int, bookingId string, bookingCore booking.BookingCore) error {
-	if bookingCore.Payment.Status == "" {
-		bookingCore.Payment.Status = "cancelled"
+	if bookingCore.Status == "" {
+		bookingCore.Status = "cancelled"
 	}
 
 	err := bs.bookData.CancelBooking(userIdLogin, bookingId, bookingCore)
@@ -58,7 +58,7 @@ func (bs *bookService) GetBooking(userId uint) ([]booking.BookingCore, error) {
 
 // WebhoocksData implements booking.BookServiceInterface.
 func (bs *bookService) WebhoocksData(webhoocksReq booking.BookingCore) error {
-	if webhoocksReq.Code == "" {
+	if webhoocksReq.Code == ""  {
 		return errors.New("invalid order id")
 	}
 

@@ -4,7 +4,6 @@ import (
 	"KosKita/app/config"
 	"KosKita/features/booking"
 	"errors"
-	"fmt"
 	"time"
 
 	mid "github.com/midtrans/midtrans-go"
@@ -13,7 +12,7 @@ import (
 )
 
 type MidtransInterface interface {
-	NewOrderPayment(book booking.BookingCore) (*booking.PaymentCore, error)
+	NewOrderPayment(book booking.BookingCore) (*booking.BookingCore, error)
 	CancelOrderPayment(bookingId string) error
 }
 
@@ -33,15 +32,14 @@ func New() MidtransInterface {
 }
 
 // NewOrderPayment implements Midtrans.
-func (pay *midtrans) NewOrderPayment(book booking.BookingCore) (*booking.PaymentCore, error) {
+func (pay *midtrans) NewOrderPayment(book booking.BookingCore) (*booking.BookingCore, error) {
 	req := new(coreapi.ChargeReq)
 	req.TransactionDetails = mid.TransactionDetails{
-		// OrderID:  fmt.Sprintf("%d", book.Code),
 		OrderID:  book.Code,
 		GrossAmt: int64(book.Total),
 	}
 
-	switch book.Payment.Bank {
+	switch book.Bank {
 	case "bca":
 		req.PaymentType = coreapi.PaymentTypeBankTransfer
 		req.BankTransfer = &coreapi.BankTransferDetails{
@@ -62,13 +60,6 @@ func (pay *midtrans) NewOrderPayment(book booking.BookingCore) (*booking.Payment
 		req.BankTransfer = &coreapi.BankTransferDetails{
 			Bank: mid.BankPermata,
 		}
-	case "mandiri":
-		req.PaymentType = coreapi.PaymentTypeEChannel
-		req.EChannel = &coreapi.EChannelDetail{
-			BillInfo1: "KosKita Booking",
-			BillInfo2: fmt.Sprintf("%d BookedAt", len(book.BookedAt.Format(time.RFC3339))),
-			BillKey:   fmt.Sprintf("%d", book.Code),
-		}
 	default:
 		return nil, errors.New("unsupported payment")
 	}
@@ -81,39 +72,31 @@ func (pay *midtrans) NewOrderPayment(book booking.BookingCore) (*booking.Payment
 		return nil, errors.New(res.StatusMessage)
 	}
 
-	if res.BillKey != "" {
-		book.Payment.BillKey = res.BillKey
-	}
-
-	if res.BillerCode != "" {
-		book.Payment.BillCode = res.BillerCode
-	}
-
 	if len(res.VaNumbers) == 1 {
-		book.Payment.VirtualNumber = res.VaNumbers[0].VANumber
+		book.VirtualNumber = res.VaNumbers[0].VANumber
 	}
 
 	if res.PermataVaNumber != "" {
-		book.Payment.VirtualNumber = res.PermataVaNumber
+		book.VirtualNumber = res.PermataVaNumber
 	}
 
 	if res.PaymentType != "" {
-		book.Payment.Method = res.PaymentType
+		book.Method = res.PaymentType
 	}
 
 	if res.TransactionStatus != "" {
-		book.Payment.Status = res.TransactionStatus
+		book.Status = res.TransactionStatus
 	}
 
 	if expiredAt, err := time.Parse("2006-01-02 15:04:05", res.ExpiryTime); err != nil {
 		return nil, err
 	} else {
-		book.Payment.ExpiredAt = expiredAt
+		book.ExpiredAt = expiredAt
 	}
 
-	book.Payment.BookingTotal = book.Total
+	book.BookingTotal = book.Total
 
-	return &book.Payment, nil
+	return &book, nil
 }
 
 func (pay *midtrans) CancelOrderPayment(bookingId string) error {
