@@ -29,6 +29,7 @@ type OrderHistoryResponse struct {
 	PaymentStatus string    `json:"payment_status,omitempty"`
 	TotalHarga    float64   `json:"total_harga,omitempty"`
 	CreatedAt     time.Time `json:"created_at,omitempty"`
+	PaidAt        string    `json:"paid_at,omitempty"`
 }
 
 func CoreToResponse(o order.OrderCore) OrderResponse {
@@ -57,5 +58,6 @@ func CoreToResponseOrderHistory(core *order.OrderCore) OrderHistoryResponse {
 		PaymentStatus: core.Status,
 		TotalHarga:    core.Total,
 		CreatedAt:     core.CreatedAt,
+		PaidAt:        core.PaidAt,
 	}
 }
